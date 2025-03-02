@@ -1,0 +1,12 @@
+# Use the base image
+FROM ghcr.io/dezh-tech/immortal:latest
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the configuration file
+COPY ./config.yml ./config.yml
+
+# Environment variables
+ENV IMMO_MONGO_URI="mongodb://user:pass@example.com/jellyfish?authSource=admin"
+ENV IMMO_REDIS_URI="redis://user:pass@example.com/"

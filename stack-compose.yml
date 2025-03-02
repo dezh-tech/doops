@@ -1,0 +1,102 @@
+version: "3.8"
+
+services:
+  #! Service: Kraken
+  kraken-service:
+    image: ghcr.io/dezh-tech/kraken:latest
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        delay: 5s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.5
+    ports:
+      - "${KRAKEN_PORT}:3000"
+      # - "50052:50051" # gRPC
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${KRAKEN_PORT}
+      GRPC_PORT: ${GRPC_PORT}
+      ENABLE_ORM_LOGS: ${ENABLE_ORM_LOGS}
+      ENABLE_DOCUMENTATION: ${ENABLE_DOCUMENTATION}
+      MONGO_DB_URL: "mongodb://${MONGO_USER}:${MONGO_PASS}@mongo/${MONGO_DB}?authSource=admin"
+      MONGO_DB_CONNECTION_TIMEOUT_IN_MS: ${MONGO_DB_CONNECTION_TIMEOUT_IN_MS}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+      TRYSPEED_WEBHOOK_SECRET: ${TRYSPEED_WEBHOOK_SECRET}
+      TRYSPEED_API_KEY: ${TRYSPEED_API_KEY}
+      REDIS_URI: "redis://:${REDIS_PASS}@redis-stack/"
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+    depends_on:
+      - mongo
+      - redis-stack
+
+  #! Service: Immortal
+  immortal:
+    image: ghcr.io/dezh-tech/immortal:latest
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        delay: 5s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
+        reservations:
+          cpus: "0.2"
+          memory: "256M"
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.5
+    depends_on:
+      - kraken-service
+      - mongo
+      - redis-stack
+    environment:
+      IMMO_MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASS}@mongo/${MONGO_DB}?authSource=admin"
+      IMMO_REDIS_URI: "redis://:${REDIS_PASS}@redis-stack/"
+
+  #! Service: MongoDB
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "${MONGO_PORT}:27017"
+
+  #! Service: Redis Stack
+  redis-stack:
+    image: redis/redis-stack:latest
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASS}
+    ports:
+      - "${REDIS_PORT}:6379"
+
+volumes:
+  mongo_data:
+

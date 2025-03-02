@@ -1,0 +1,19 @@
+FROM ghcr.io/dezh-tech/kraken:latest
+
+WORKDIR /app
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV GRPC_PORT=50051
+ENV ENABLE_ORM_LOGS=true
+ENV ENABLE_DOCUMENTATION=true
+ENV MONGO_DB_URL="mongodb://user:pass@example.com/jellyfish?authSource=admin"
+ENV MONGO_DB_CONNECTION_TIMEOUT_IN_MS=1000
+ENV JWT_SECRET="MY-SECRET"
+ENV JWT_EXPIRATION_TIME="24h"
+ENV TRYSPEED_WEBHOOK_SECRET="SECRET"
+ENV TRYSPEED_API_KEY="SECRET"
+ENV REDIS_URI="redis://user:pass@example.com/"
+ENV TELEGRAM_BOT_TOKEN=""
+ENV TELEGRAM_CHAT_ID=""

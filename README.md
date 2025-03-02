@@ -1,2 +1,2 @@
 # jelly-ops
-Server and infrastructure configs/documents for development and production of jellyfish projects. 
+Server and infrastructure configs/documents for the development and production of Jellyfish projects.
