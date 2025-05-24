@@ -1,4 +1,4 @@
-# Open Ops
+# Dezh Open Ops
 
 This repo contains full documentation and example configs to self-host the Dezh open-source projects.
 
