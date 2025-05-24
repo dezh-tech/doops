@@ -4,4 +4,4 @@ This repo contains full documentation and example configs to self-host the Dezh 
 
 ## License
 
-This repository is published under the MIT License.
+This repository is published under the [MIT License](./LICENSE).
