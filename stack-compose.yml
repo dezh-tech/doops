@@ -34,6 +34,7 @@ services:
       ENABLE_DOCUMENTATION: ${ENABLE_DOCUMENTATION}
       MONGO_DB_URL: "mongodb://${MONGO_USER}:${MONGO_PASS}@mongo/${MONGO_DB}?authSource=admin"
       MONGO_DB_CONNECTION_TIMEOUT_IN_MS: ${MONGO_DB_CONNECTION_TIMEOUT_IN_MS}
+      MONGO_DB_NAME: ${MONGO_DB}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
       TRYSPEED_WEBHOOK_SECRET: ${TRYSPEED_WEBHOOK_SECRET}
@@ -41,6 +42,9 @@ services:
       REDIS_URI: "redis://:${REDIS_PASS}@redis-stack/"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      NOSTR_RELAYS: ${NOSTR_RELAYS}
+      NOSTR_PRIVATE_KEY: ${NOSTR_PRIVATE_KEY}
+      NOSTR_MAIN_RELAY: ${NOSTR_MAIN_RELAY}
     depends_on:
       - mongo
       - redis-stack
@@ -75,6 +79,40 @@ services:
       IMMO_MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASS}@mongo/${MONGO_DB}?authSource=admin"
       IMMO_REDIS_URI: "redis://:${REDIS_PASS}@redis-stack/"
 
+  #! Service: Nos3
+  nos3:
+    image: ghcr.io/dezh-tech/nos3:latest
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        delay: 5s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
+        reservations:
+          cpus: "0.2"
+          memory: "256M"
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.5
+    depends_on:
+      - kraken-service
+      - mongo
+      - redis-stack
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      DATABASE_URI: "mongodb://${MONGO_USER}:${MONGO_PASS}@mongo/${MONGO_DB}?authSource=admin"
+      BROKER_URI: "redis://:${REDIS_PASS}@redis-stack/"
+      DEFAULT_NOS3_ADDRESS: ${DEFAULT_NOS3_ADDRESS}
+
   #! Service: MongoDB
   mongo:
     image: mongo:6.0
@@ -97,6 +135,26 @@ services:
     ports:
       - "${REDIS_PORT}:6379"
 
+  #! Service: MinIO
+  minio:
+    image: quay.io/minio/minio:latest
+    ports:
+      - "9002:9002"
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+      - ./scripts:/scripts
+    entrypoint: /bin/sh -c "minio server --console-address ':9002' /data & sleep 10 && /scripts/init-buckets.sh && wait"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
 volumes:
   mongo_data:
+  minio_data:
 
